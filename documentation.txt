@@ -20,3 +20,9 @@ heroku --version
 
 
 heroku git:remote -a tinder-mern-backend-practice
+
+
+
+fetch latest code from github:
+git cline ___link__
+git pull
