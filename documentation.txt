@@ -1,0 +1,22 @@
+git init
+
+npm init
+
+npm i express mongoose
+
+npm i -g nodemon
+
+npm i --save-dev cross-env   // to create a dev dependency
+
+to run nodemon :- npx nodemon
+
+npm i cors
+
+npm install heroku
+
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope CurrentUser
+
+heroku --version
+
+
+heroku git:remote -a tinder-mern-backend-practice
