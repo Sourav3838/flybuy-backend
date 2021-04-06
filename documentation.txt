@@ -20,3 +20,22 @@ heroku --version
 
 
 heroku git:remote -a tinder-mern-backend-practice
+
+
+
+fetch latest code from github:
+git clOne ___link__
+git pull
+
+
+git remote add origin git@github.com:Sourav3838/flybuy-customer.git
+git branch -M main
+git push -u origin main
+in order to push use commit command first then use these three
+
+https://github.com/Sourav3838/flybuy-backend.git
+https://github.com/Sourav3838/flybuy-customer.git
+https://github.com/Sourav3838/flybuy-admin.git
+
+
+Solution is so simple, Use https://github.com/wanted-repository.git version instead of git@github.com:wanted-repository.git .
