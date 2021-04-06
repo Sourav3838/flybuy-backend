@@ -27,6 +27,9 @@ fetch latest code from github:
 git clone ___link__
 git pull
 
+
+git status
+git add <filename>
 git commit -m "<message>"
 git pull
 git remote add origin git@github.com:Sourav3838/flybuy-customer.git
