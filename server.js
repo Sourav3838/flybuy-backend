@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Cards from './dbCards.js';
 import Users from './dbUsers.js';
 import Products from './dbProducts.js';
+import Order from './dbOrders.js';
 import Cart from './dbCarts.js';
 import CORS from 'cors';
 import Stripe from 'stripe';
@@ -44,7 +45,7 @@ var transporter = nodemailer.createTransport({
 	service: 'gmail',
 	auth: {
 		user: 'souravsingh10386@gmail.com',
-		pass: 'Sourav@8383',
+		pass: 'Sourav@123',
 	},
 });
 
@@ -124,17 +125,25 @@ app.get('/user/current', (req, res) => {
 
 app.post('/user/logout', (req, res) => {
 	console.log('currentUser', currentUser);
-	if (currentUser !== {}) {
-		if (req.body._id === currentUser[0].id) {
-			res.status(200).send('Done');
-		}
-	} else res.status(200).send('Done');
+
+	res.status(200).send('Done');
 });
 
 app.post('/product/create', (req, res) => {
 	const prodCreate = req.body;
 	console.log('prodCreate', prodCreate);
 	Products.create(prodCreate, (err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.status(201).send(data);
+		}
+	});
+});
+
+app.get(`/user/current/:userId`, (req, res) => {
+	const { userId } = req.params;
+	Users.find({ _id: userId }, (err, data) => {
 		if (err) {
 			res.status(500).send(err);
 		} else {
@@ -267,15 +276,16 @@ app.post('/payment/create', async (req, res) => {
 	try {
 		const total = req.query.total;
 		console.log(`total`, total);
+		if (total) {
+			const payIntent = await stripe.paymentIntents.create({
+				amount: total,
+				currency: 'inr',
+			});
 
-		const payIntent = await stripe.paymentIntents.create({
-			amount: total,
-			currency: 'inr',
-		});
-
-		res.status(201).send({
-			clientSecret: payIntent.client_secret,
-		});
+			res.status(201).send({
+				clientSecret: payIntent.client_secret,
+			});
+		}
 	} catch (err) {
 		console.error('dhjwj', err);
 		res.status(500).json({ err: 'Something went wrong' });
@@ -296,6 +306,140 @@ app.get('/mail/send', async (req, res) => {
 	});
 });
 
+app.post('/order/create', async (req, res) => {
+	try {
+		const data = req.body;
+		console.log(data);
+		Order.create(data, (err, data) => {
+			if (err) {
+				res.status(500).send(err);
+			} else {
+				res.status(201).json({ message: 'Order added successfully' });
+			}
+		});
+	} catch (err) {
+		console.error('error in creating order', err);
+		res.status(500).json({ err: 'Something went wrong' });
+	}
+});
+
+app.get('/cart/:userId/empty', (req, res) => {
+	const { userId } = req.params;
+	console.log('userId to empty cart', userId);
+	Cart.deleteMany({ user: userId }, (err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.status(201).json({ err: 'cart emptied' });
+		}
+	});
+});
+
+app.get('/orders/all', (req, res) => {
+	const { user } = req.query;
+	if (user) {
+		console.log('user to view orders', user);
+		Order.find({ userId: user }, (err, data) => {
+			if (err) {
+				res.status(500).send(err);
+			} else {
+				res.status(201).send(data);
+			}
+		});
+	} else {
+		Order.find((err, data) => {
+			if (err) {
+				res.status(500).send(err);
+			} else {
+				res.status(201).send(data);
+			}
+		});
+	}
+});
+
+app.get('/order/:orderId', (req, res) => {
+	const { orderId } = req.params;
+	if (orderId) {
+		console.log('order id to view orders', orderId);
+		Order.find({ _id: orderId }, (err, data) => {
+			if (err) {
+				res.status(500).send(err);
+			} else {
+				res.status(201).send(data);
+			}
+		});
+	} else {
+		res.status(404).json({ message: 'no order id provided' });
+	}
+});
+
+app.put('/order/:orderId/verify', (req, res) => {
+	const { orderId } = req.params;
+	console.log('gggggggggggg', req.body);
+	if (orderId) {
+		console.log('order id to verify orders', orderId);
+
+		Order.updateOne(
+			{ _id: orderId },
+			{
+				$set: {
+					status: req.body.status,
+					admin_status_comment: req.body.admin_status_comment,
+				},
+			},
+			(err, data) => {
+				if (err) {
+					res.status(500).send(err);
+				} else {
+					res.status(201).send(data);
+				}
+			}
+		);
+	} else {
+		res.status(404).json({ message: 'no order id provided' });
+	}
+});
+
+app.put('/order/:orderId/update', (req, res) => {
+	const { orderId } = req.params;
+	console.log('hhhhhhhhhhhh', req.body);
+	if (orderId) {
+		console.log('order id to update orders', orderId);
+
+		Order.updateOne(
+			{ _id: orderId },
+			{
+				$set: {
+					category: req.body.category,
+					category_comment: req.body.category_comment,
+					category_success_rate: req.body.category_success_rate,
+					location: req.body.location,
+					latitude: req.body.latitude,
+					longitude: req.body.longitude,
+				},
+			},
+			(err, data) => {
+				if (err) {
+					res.status(500).send(err);
+				} else {
+					res.status(201).send(data);
+				}
+			}
+		);
+	} else {
+		res.status(404).json({ message: 'no order id provided' });
+	}
+});
+
+app.get('/users/all', (req, res) => {
+	Users.find((err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.status(201).send(data);
+		}
+	});
+});
 //listener
 app.listen(port, () => {
 	console.log('listing to port', port);
