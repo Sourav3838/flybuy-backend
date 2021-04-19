@@ -5,6 +5,7 @@ import Users from './dbUsers.js';
 import Products from './dbProducts.js';
 import Order from './dbOrders.js';
 import Cart from './dbCarts.js';
+import Comments from './dbComments.js';
 import CORS from 'cors';
 import Stripe from 'stripe';
 import nodemailer from 'nodemailer';
@@ -152,6 +153,27 @@ app.get(`/user/current/:userId`, (req, res) => {
 	});
 });
 
+app.get(`/retailers/all`, (req, res) => {
+	Users.find({ role: 'retailer' }, (err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.status(201).send(data);
+		}
+	});
+});
+
+app.get(`/retailer/:retailerId`, (req, res) => {
+	const { retailerId } = req.params;
+	Users.find({ _id: retailerId }, (err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.status(201).send(data);
+		}
+	});
+});
+
 app.get('/product/all', (req, res) => {
 	Products.find((err, data) => {
 		if (err) {
@@ -164,6 +186,17 @@ app.get('/product/all', (req, res) => {
 
 app.get('/product/all/customer', (req, res) => {
 	Products.find({ status: 'Approved' }, (err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.status(201).send(data);
+		}
+	});
+});
+
+app.get('/product/all/retailer/:retailerId', (req, res) => {
+	const { retailerId } = req.params;
+	Products.find({ retailerId: retailerId }, (err, data) => {
 		if (err) {
 			res.status(500).send(err);
 		} else {
@@ -433,6 +466,29 @@ app.put('/order/:orderId/update', (req, res) => {
 
 app.get('/users/all', (req, res) => {
 	Users.find((err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.status(201).send(data);
+		}
+	});
+});
+
+app.post('/comment/add', (req, res) => {
+	const commentCreate = req.body;
+	console.log('commentCreate', commentCreate);
+	Comments.create(commentCreate, (err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.status(201).send(data);
+		}
+	});
+});
+
+app.get('/comments/all/product/:productId', (req, res) => {
+	const { productId } = req.params;
+	Comments.find({ prodId: productId }, (err, data) => {
 		if (err) {
 			res.status(500).send(err);
 		} else {

@@ -12,6 +12,8 @@ const productSchema = mongoose.Schema({
 	ImageURLFour: Object,
 	ImageURLFive: Object,
 	status: String,
+	role: String || 'customer',
+	retailerId: String || 'N/A',
 });
 
 export default mongoose.model('products', productSchema);
