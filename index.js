@@ -9,13 +9,15 @@ import Comments from './dbComments.js';
 import CORS from 'cors';
 import Stripe from 'stripe';
 import nodemailer from 'nodemailer';
-
+import bodyParser from 'body-parser';
+import details from './routes/dialogflow.js';
 const stripe = new Stripe(
 	'sk_test_51IRvCrFB1lDZnUf7B47wyM5MKgZXSNuWouDhlTioqn64E604mkxQxbdjgZpL2vFXtXatXlkyn09dlwmqRPHBuj7L000aDw37cS'
 );
 
 // import { cloudinary } from './cloudinary';
 //app config
+
 const app = express();
 const port = process.env.PORT || 8000;
 const connection_url = `mongodb+srv://som1234:som1234@cluster0.pm46v.mongodb.net/flubuyDB?retryWrites=true&w=majority`;
@@ -25,6 +27,11 @@ app.use(express.static('public'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(CORS());
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+app.use('/api/dialogflow', details);
 
 import cloudinary from 'cloudinary';
 cloudinary.config({
