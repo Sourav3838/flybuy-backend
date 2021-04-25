@@ -11,6 +11,7 @@ import Stripe from 'stripe';
 import nodemailer from 'nodemailer';
 import bodyParser from 'body-parser';
 import details from './routes/dialogflow.js';
+import Wishlist from './dbWishlist.js';
 const stripe = new Stripe(
 	'sk_test_51IRvCrFB1lDZnUf7B47wyM5MKgZXSNuWouDhlTioqn64E604mkxQxbdjgZpL2vFXtXatXlkyn09dlwmqRPHBuj7L000aDw37cS'
 );
@@ -192,13 +193,39 @@ app.get('/product/all', (req, res) => {
 });
 
 app.get('/product/all/customer', (req, res) => {
-	Products.find({ status: 'Approved' }, (err, data) => {
-		if (err) {
-			res.status(500).send(err);
-		} else {
-			res.status(201).send(data);
-		}
-	});
+	const { keyword, userCategory } = req.query;
+	if (!userCategory) {
+		Products.find(
+			{
+				$and: [{ product_name: { $regex: keyword } }, { status: 'Approved' }],
+			},
+			(err, data) => {
+				if (err) {
+					res.status(500).send(err);
+				} else {
+					res.status(201).send(data);
+				}
+			}
+		);
+	} else {
+		console.log(userCategory);
+		Products.find(
+			{
+				$and: [
+					{ product_name: { $regex: keyword } },
+					{ product_category: { $in: [userCategory] } },
+					{ status: 'Approved' },
+				],
+			},
+			(err, data) => {
+				if (err) {
+					res.status(500).send(err);
+				} else {
+					res.status(201).send(data);
+				}
+			}
+		);
+	}
 });
 
 app.get('/product/all/retailer/:retailerId', (req, res) => {
@@ -242,7 +269,17 @@ app.get('/product/:productId', (req, res) => {
 		}
 	});
 });
-
+app.delete('/product/:prodId/user/:userId/remove/cart', (req, res) => {
+	const { prodId, userId } = req.params;
+	console.log('userId', userId, 'prodId', prodId);
+	Cart.remove({ $and: [{ productId: prodId }, { user: userId }] }, (err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.status(201).send(data);
+		}
+	});
+});
 app.post('/product/:productId/add/cart', (req, res) => {
 	const { productId } = req.params;
 	const user = req.body;
@@ -270,6 +307,7 @@ app.post('/product/:productId/add/cart', (req, res) => {
 						console.log(`data`);
 						const values = {
 							productId: data[0]._id,
+							quantity: 1,
 							product: data[0],
 							user,
 						};
@@ -283,6 +321,73 @@ app.post('/product/:productId/add/cart', (req, res) => {
 					}
 				});
 			}
+		}
+	});
+});
+
+app.post('/product/:productId/add/wishlist', (req, res) => {
+	const { productId } = req.params;
+	const user = req.body;
+	console.log(user);
+	console.log(`productId`, productId);
+	currentUser = user || null;
+	Wishlist.find({ $and: [{ productId: productId }, { user: user._id }] }, (err, data) => {
+		if (err) {
+			console.log(`1`);
+			res.status(500).send(err);
+		} else {
+			if (data.length > 0) {
+				console.log(`2`);
+				console.log(`data`, data);
+				return res.status(200).json({ err: 'wishlist already has a product with same details' });
+			} else {
+				console.log(`data fffffffff`, data);
+				console.log(`3`);
+				Products.find({ _id: productId }, (err, data) => {
+					if (err) {
+						console.log(`4`);
+						res.status(500).send(err);
+					} else {
+						console.log(`5`);
+						console.log(`data`);
+						const values = {
+							productId: data[0]._id,
+							product: data[0],
+							user,
+						};
+						Wishlist.create(values, (err, data) => {
+							if (err) {
+								res.status(500).send(err);
+							} else {
+								res.status(201).send(data);
+							}
+						});
+					}
+				});
+			}
+		}
+	});
+});
+app.delete('/product/:prodId/remove/:userId/wishlist', (req, res) => {
+	const { prodId, userId } = req.params;
+	console.log('userId', userId, 'prodId', prodId);
+	Wishlist.remove({ $and: [{ productId: prodId }, { user: userId }] }, (err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.status(201).send(data);
+		}
+	});
+});
+
+app.get('/user/:userId/wishlist', (req, res) => {
+	const { userId } = req.params;
+	console.log('userId', userId);
+	Wishlist.find({ user: userId }, (err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.status(201).send(data);
 		}
 	});
 });
@@ -439,7 +544,34 @@ app.put('/order/:orderId/verify', (req, res) => {
 		res.status(404).json({ message: 'no order id provided' });
 	}
 });
-
+app.put('/product/:id/user/:userId/quantity/cart', (req, res) => {
+	const { id, userId } = req.params;
+	const { action } = req.query;
+	Cart.find({ $and: [{ productId: id }, { user: userId }] }, (err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			if (data[0].quantity) {
+				Cart.updateOne(
+					{ $and: [{ productId: id }, { user: userId }] },
+					{
+						$set: {
+							quantity: action === 'inc' ? data[0].quantity + 1 : data[0].quantity - 1,
+						},
+					},
+					(err, data) => {
+						if (err) {
+							res.status(500).send(err);
+						} else {
+							console.log(data);
+							res.status(201).send(data);
+						}
+					}
+				);
+			}
+		}
+	});
+});
 app.put('/order/:orderId/update', (req, res) => {
 	const { orderId } = req.params;
 	console.log('hhhhhhhhhhhh', req.body);
@@ -456,6 +588,32 @@ app.put('/order/:orderId/update', (req, res) => {
 					location: req.body.location,
 					latitude: req.body.latitude,
 					longitude: req.body.longitude,
+				},
+			},
+			(err, data) => {
+				if (err) {
+					res.status(500).send(err);
+				} else {
+					res.status(201).send(data);
+				}
+			}
+		);
+	} else {
+		res.status(404).json({ message: 'no order id provided' });
+	}
+});
+
+app.put('/order/:orderId/user/comment', (req, res) => {
+	const { orderId } = req.params;
+	console.log('hhhhhhhhhhhh', req.body);
+	if (orderId) {
+		console.log('order id to update orders', orderId);
+
+		Order.updateOne(
+			{ _id: orderId },
+			{
+				$set: {
+					user_comment: req.body.userComment,
 				},
 			},
 			(err, data) => {

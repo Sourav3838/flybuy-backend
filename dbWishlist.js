@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
-const CartSchema = new mongoose.Schema({
+const WishlistSchema = new mongoose.Schema({
 	product: Object,
-	quantity: Number,
 	productId: String,
 	user: {
 		type: mongoose.Schema.Types.ObjectId,
@@ -14,4 +13,4 @@ const CartSchema = new mongoose.Schema({
 	},
 });
 
-export default mongoose.model('cart', CartSchema);
+export default mongoose.model('wishlist', WishlistSchema);
