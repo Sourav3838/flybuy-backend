@@ -5,6 +5,7 @@ import Users from './dbUsers.js';
 import Products from './dbProducts.js';
 import Order from './dbOrders.js';
 import Cart from './dbCarts.js';
+import Queries from './dbQuery.js';
 import Comments from './dbComments.js';
 import CORS from 'cors';
 import Stripe from 'stripe';
@@ -108,8 +109,10 @@ app.post('/user/login', (req, res) => {
 	console.log('userCred', userCred);
 	Users.create(userCred, (err, data) => {
 		if (err) {
+			console.log(`11`, 11);
 			res.status(500).send(err);
 		} else {
+			console.log(`22`, 22);
 			res.status(201).send(data);
 		}
 	});
@@ -118,14 +121,21 @@ app.post('/user/login', (req, res) => {
 app.post('/user/find', (req, res) => {
 	const userFind = req.body;
 	console.log('userFind.username', userFind.username);
-	Users.find({ username: userFind.username }, (err, data) => {
-		if (err) {
-			res.status(500).send(err);
-		} else {
-			currentUser = data || null;
-			res.status(201).send(data);
+	Users.find(
+		{
+			$and: [{ username: userFind.username }, { password: userFind.password }],
+		},
+		(err, data) => {
+			if (err) {
+				console.log(1);
+				res.status(500).send(err);
+			} else {
+				console.log(2);
+				currentUser = data || null;
+				res.status(201).send(data);
+			}
 		}
-	});
+	);
 });
 
 app.get('/user/current', (req, res) => {
@@ -530,6 +540,7 @@ app.put('/order/:orderId/verify', (req, res) => {
 				$set: {
 					status: req.body.status,
 					admin_status_comment: req.body.admin_status_comment,
+					signature: req.body.signature,
 				},
 			},
 			(err, data) => {
@@ -660,6 +671,55 @@ app.get('/comments/all/product/:productId', (req, res) => {
 			res.status(201).send(data);
 		}
 	});
+});
+app.get('/query/all', (req, res) => {
+	Queries.find((err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.status(201).send(data);
+		}
+	});
+});
+app.get('/user/:userId/query', (req, res) => {
+	const { userId } = req.params;
+	Queries.find({ userId: userId }, (err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.status(201).send(data);
+		}
+	});
+});
+app.get('/query/:queryId', (req, res) => {
+	const { queryId } = req.params;
+	Queries.find({ _id: queryId }, (err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.status(201).send(data);
+		}
+	});
+});
+app.put('/query/:queryId/close', (req, res) => {
+	const { queryId } = req.params;
+	const { comment } = req.body;
+	Queries.updateOne(
+		{ _id: queryId },
+		{
+			$set: {
+				status: 'Closed',
+				admin_comment: comment,
+			},
+		},
+		(err, data) => {
+			if (err) {
+				res.status(500).send(err);
+			} else {
+				res.status(201).send(data);
+			}
+		}
+	);
 });
 //listener
 app.listen(port, () => {

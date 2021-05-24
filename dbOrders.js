@@ -13,6 +13,7 @@ const OrderSchema = new mongoose.Schema({
 	latitude: String,
 	longitude: String,
 	is_delivered: String,
+	signature:String,
 	user_comment: String,
 	action_by_admin: {
 		type: Date,

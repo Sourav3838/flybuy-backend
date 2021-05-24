@@ -45,13 +45,15 @@ apiRoute.post('/textQuery/:userId', async (req, res) => {
 		const data = {
 			userId: userId,
 			query: result.parameters,
+			status: 'Open',
+			admin_comment: '',
 		};
 
 		Queries.create(data, (err, data) => {
 			if (err) {
 				console.log(`error occurred while saving a query`);
 			} else {
-				console.log(`query saved`);
+				console.log(`data`, data);
 			}
 		});
 
